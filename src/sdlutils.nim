@@ -64,6 +64,9 @@ proc draw*(renderer: RendererPtr, texture: TexturePtr, x, y: cint) =
   texture.queryTexture(nil, nil, addr dest.w, addr dest.h)
   renderer.copy(texture, nil, addr dest)
 
+proc drawRect*(renderer: RendererPtr, rect: Rect) =
+  renderer.drawRect(unsafeAddr rect)
+
 proc stopMusic*(music: var MusicPtr) =
   discard haltMusic()
   freeMusic(music)
