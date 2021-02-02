@@ -9,6 +9,10 @@ template unwrap*(notFalse: bool, msg: string) =
   if not notFalse:
     quitErr "Error: " & msg
 
+template unwrap*(notFalse: Bool32, msg: string) =
+  if not notFalse.bool:
+    quitErr "Error: " & msg
+
 template unwrap*(notNil: ptr, msg: string): typeof(notNil) =
   let it = notNil
   if it.isNil:
