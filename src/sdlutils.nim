@@ -13,7 +13,7 @@ template unwrap*(notFalse: Bool32, msg: string) =
   if not notFalse.bool:
     quitErr "Error: " & msg
 
-template unwrap*(notNil: ptr, msg: string): typeof(notNil) =
+template unwrap*[T](notNil: ptr T, msg: string): ptr T =
   let it = notNil
   if it.isNil:
     quitErr "Error: " & msg
