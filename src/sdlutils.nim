@@ -19,26 +19,11 @@ template unwrap*[T](notNil: ptr T, msg: string): ptr T =
     quitErr "Error: " & msg
   it
 
-template withSurface*(surf: SurfacePtr, body: untyped): untyped {.dirty.} =
-  surface <- surf
-  body
-  freeSurface(it)
-
-template withSurface*(surf: SurfacePtr, name, body: untyped): untyped {.dirty.} =
-  `name` <- surf
-  body
-  freeSurface(`name`)
-
-template withFont*(fnt: FontPtr, name, body: untyped): untyped {.dirty.} =
-  `name` <- fnt
-  body
-  close(`name`)
-
 proc toCstring*(c: char): cstring = # for rendering single chars
   var res = [c, '\0']
   result = cast[cstring](addr res)
 
-const mods = (
+const mods* = (
   KMOD_LCTRL.cint or KMOD_RCTRL.cint or
   KMOD_LSHIFT.cint or KMOD_RSHIFT.cint or
   KMOD_LALT.cint or KMOD_RALT.cint)
@@ -67,6 +52,27 @@ proc draw*(renderer: RendererPtr, texture: TexturePtr, x, y: cint) =
     dest = rect(x, y, 0, 0)
   texture.queryTexture(nil, nil, addr dest.w, addr dest.h)
   renderer.copy(texture, nil, addr dest)
+
+template withTextSolid*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
+  let surf = renderTextSolid(font, text, color)
+  let texture {.inject.} = createTextureFromSurface(renderer, surf)
+  surf.destroy()
+  body
+  texture.destroy()
+
+template withTextShaded*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
+  let surf = renderTextShaded(font, text, color)
+  let texture {.inject.} = createTextureFromSurface(renderer, surf)
+  surf.destroy()
+  body
+  texture.destroy()
+
+template withTextBlended*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
+  let surf = renderTextBlended(font, text, color)
+  let texture {.inject.} = createTextureFromSurface(renderer, surf)
+  surf.destroy()
+  body
+  texture.destroy()
 
 proc drawRect*(renderer: RendererPtr, rect: Rect) =
   renderer.drawRect(unsafeAddr rect)
