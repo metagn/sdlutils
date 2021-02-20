@@ -43,6 +43,9 @@ proc draw*(renderer: RendererPtr, texture: TexturePtr, src, dest: Rect) =
 proc draw*(renderer: RendererPtr, texture: TexturePtr, dest: var Rect) =
   renderer.copy(texture, nil, addr dest)
 
+template draw*(renderer: RendererPtr, texture: TexturePtr, dest: Rect{`let`}) =
+  renderer.copy(texture, nil, unsafeAddr dest)
+
 proc draw*(renderer: RendererPtr, texture: TexturePtr, dest: Rect) =
   var dest = dest
   renderer.draw(texture, dest)
@@ -53,26 +56,24 @@ proc draw*(renderer: RendererPtr, texture: TexturePtr, x, y: cint) =
   texture.queryTexture(nil, nil, addr dest.w, addr dest.h)
   renderer.copy(texture, nil, addr dest)
 
-template withTextSolid*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
-  let surf = renderTextSolid(font, text, color)
+template withSurfaceToTexture*(renderer: RendererPtr, surface: SurfacePtr, body) =
+  let surf = surface
   let texture {.inject.} = createTextureFromSurface(renderer, surf)
   surf.destroy()
   body
   texture.destroy()
+
+template withTextSolid*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
+  renderer.withSurfaceToTexture(renderTextSolid(font, text, color), body)
 
 template withTextShaded*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
-  let surf = renderTextShaded(font, text, color)
-  let texture {.inject.} = createTextureFromSurface(renderer, surf)
-  surf.destroy()
-  body
-  texture.destroy()
+  renderer.withSurfaceToTexture(renderTextShaded(font, text, color), body)
 
 template withTextBlended*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, body) =
-  let surf = renderTextBlended(font, text, color)
-  let texture {.inject.} = createTextureFromSurface(renderer, surf)
-  surf.destroy()
-  body
-  texture.destroy()
+  renderer.withSurfaceToTexture(renderTextBlended(font, text, color), body)
+
+template withTextBlendedWrapped*(renderer: RendererPtr, font: FontPtr, text: cstring, color: Color, wrap: uint32, body) =
+  renderer.withSurfaceToTexture(renderTextBlendedWrapped(font, text, color, wrap), body)
 
 proc drawRect*(renderer: RendererPtr, rect: Rect) =
   renderer.drawRect(unsafeAddr rect)
