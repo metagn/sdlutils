@@ -1,5 +1,19 @@
 import sdl2, sdl2/[ttf, mixer], sdl2/image as sdlimage
 
+template withSurface*(surf: SurfacePtr, body: untyped): untyped {.dirty.} =
+  let it = surf
+  if unlikely(it.isNil):
+    quit "Surface was nil, error: " & $getError()
+  body
+  freeSurface(it)
+
+template withSurface*(surf: SurfacePtr, name, body: untyped): untyped {.dirty.} =
+  let `name` = surf
+  if unlikely(`name`.isNil):
+    quit "Surface was nil, error: " & $getError()
+  body
+  freeSurface(`name`)
+
 template quitErr*(desc: string) =
   write(stderr, desc & ": ")
   write(stderr, getError())
@@ -30,6 +44,12 @@ const mods* = (
 
 template modsHeldDown*: bool =
   (getModState().cint and mods) != 0
+
+template rgb*(x: int32): Color =
+  cast[Color]((x shl 8) or 0xFF)
+
+template rgba*(x: int32): Color =
+  cast[Color](x)
 
 template draw*(renderer: RendererPtr, texture: TexturePtr, src, dest: var Rect) =
   renderer.copy(texture, addr src, addr dest)
@@ -90,11 +110,11 @@ proc setMusic*(music: var MusicPtr, file: cstring) =
   if unlikely(music.isNil):
     quitErr "Couldn't load music " & $file
 
-proc loopMusic*(music: MusicPtr): cint {.discardable.} =
+proc loopMusic*(music: MusicPtr): cint {.discardable, inline.} =
   playMusic(music, -1)
 
-proc playMusic*(music: MusicPtr, loops = 1): cint {.discardable.} =
-  playMusic(music, loops)
+proc playMusic*(music: MusicPtr): cint {.discardable, inline.} =
+  playMusic(music, 1)
 
-proc playSound*(chunk: ChunkPtr): cint {.discardable.} =
+proc playSound*(chunk: ChunkPtr): cint {.discardable, inline.} =
   playChannel(-1, chunk, 0)
